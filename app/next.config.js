@@ -1,4 +1,10 @@
 /** @type {import('next').NextConfig} */
-const nextConfig = {}
+require("dotenv").config();
 
-module.exports = nextConfig
+const nextConfig = {
+  env: {
+    AUDIO_LINK: process.env.AUDIO_LINK,
+  },
+};
+
+module.exports = nextConfig;
