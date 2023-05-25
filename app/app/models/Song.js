@@ -21,14 +21,6 @@ const songSchema = new mongoose.Schema({
       message: "At least one tag is required",
     },
   },
-  offset: {
-    type: Number,
-    required: true,
-  },
-  duration: {
-    type: Number,
-    required: true,
-  },
 });
 
 const Song = mongoose.models.Song || mongoose.model("Song", songSchema);
