@@ -4,14 +4,11 @@ import Link from "next/link";
 import { Howl, Howler } from "howler";
 import { useState, useEffect } from "react";
 import { useRouter } from "next/router";
+
 async function getData() {
   const res = await fetch(process.env.LOCALHOST_BASE_URL + "songs");
-  // The return value is *not* serialized
-  // You can return Date, Map, Set, etc.
 
-  // Recommendation: handle errors
   if (!res.ok) {
-    // This will activate the closest `error.js` Error Boundary
     throw new Error("Failed to fetch data");
   }
 
@@ -19,17 +16,25 @@ async function getData() {
 }
 
 export default async function Practice() {
+  const [selectedSongs, setSelectedSongs] = useState([]);
+  const [selectedTags, setSelectedTags] = useState([]);
+
   const [isPlaying, setIsPlaying] = useState(false);
   const [currentSong, setCurrentSong] = useState(null);
   let currentIndex = 0;
   let fetchedSongs = await getData();
 
   const playSound = async () => {
-    fetchedSongs = fetchedSongs.sort(() => Math.random() - 0.5);
+    const selectedSongsToPlay = fetchedSongs.filter((song) =>
+      selectedSongs.includes(song._id)
+    );
+
+    // Sort and play the selected songs
+    selectedSongsToPlay.sort(() => Math.random() - 0.5);
     setIsPlaying(true);
 
     const playNextSong = () => {
-      if (currentIndex >= fetchedSongs.length) {
+      if (currentIndex >= selectedSongsToPlay.length) {
         // All songs have been played
         console.log("All songs have been played");
         currentIndex = 0;
@@ -38,29 +43,65 @@ export default async function Practice() {
         return;
       }
 
-      const { link, duration, offset } = fetchedSongs[currentIndex];
-      console.log(fetchedSongs[currentIndex]);
-      setCurrentSong(fetchedSongs[currentIndex]);
+      const { link } = selectedSongsToPlay[currentIndex];
+      console.log(selectedSongsToPlay[currentIndex]);
+      setCurrentSong(selectedSongsToPlay[currentIndex]);
       const sound = new Howl({
         src: [link],
         html5: true,
         autoplay: true,
-        sprite: {
-          snippet: [
-            offset * parseInt(process.env.ONE_MILLISECOND, 10),
-            duration * parseInt(process.env.ONE_MILLISECOND, 10),
-          ],
-        },
         onend: function () {
           sound.stop();
           currentIndex++;
           setTimeout(playNextSong, parseInt(process.env.ONE_MILLISECOND, 10)); // Delay before playing the next song (2 seconds = 2000 milliseconds)
         },
       });
-      sound.play("snippet");
+      sound.play();
     };
 
     playNextSong(); // Start playing the first song
+  };
+
+  const handleSongSelection = (e, songId) => {
+    if (e.target.checked) {
+      setSelectedSongs((prevSelectedSongs) => [...prevSelectedSongs, songId]);
+    } else {
+      setSelectedSongs((prevSelectedSongs) =>
+        prevSelectedSongs.filter((id) => id !== songId)
+      );
+    }
+  };
+
+  const selectAllSongs = () => {
+    const allSongIds = fetchedSongs.map((song) => song._id);
+    setSelectedSongs(allSongIds);
+  };
+
+  const getUniqueTags = () => {
+    const allTags = fetchedSongs.reduce(
+      (tags, song) => [...tags, ...song.tags],
+      []
+    );
+    return Array.from(new Set(allTags));
+  };
+
+  const handleTagSelection = (e, tag) => {
+    if (e.target.checked) {
+      setSelectedTags((prevSelectedTags) => [...prevSelectedTags, tag]);
+    } else {
+      setSelectedTags((prevSelectedTags) =>
+        prevSelectedTags.filter((selectedTag) => selectedTag !== tag)
+      );
+    }
+  };
+
+  const getFilteredSongs = () => {
+    if (selectedTags.length === 0) {
+      return fetchedSongs;
+    }
+    return fetchedSongs.filter((song) =>
+      selectedTags.every((selectedTag) => song.tags.includes(selectedTag))
+    );
   };
 
   return (
@@ -75,6 +116,46 @@ export default async function Practice() {
           : "No song playing"}
       </h1>
       <Link href="/">Home</Link>
+
+      <h2>All Songs</h2>
+      <ul>
+        {getFilteredSongs().map((song) => (
+          <li key={song._id}>
+            <label>
+              <input
+                type="checkbox"
+                checked={selectedSongs.includes(song._id)}
+                onChange={(e) => handleSongSelection(e, song._id)}
+              />
+              {song.title} - {song.artist}
+            </label>
+            <ul>
+              {song.tags.map((tag) => (
+                <li key={tag}>{tag}</li>
+              ))}
+            </ul>
+          </li>
+        ))}
+      </ul>
+      <h2>Filter by Tags</h2>
+      <ul>
+        {getUniqueTags().map((tag) => (
+          <li key={tag}>
+            <label>
+              <input
+                type="checkbox"
+                checked={selectedTags.includes(tag)}
+                onChange={(e) => handleTagSelection(e, tag)}
+              />
+              {tag}
+            </label>
+          </li>
+        ))}
+      </ul>
+
+      <button onClick={selectAllSongs}>Select All</button>
+
+      <button onClick={() => setSelectedSongs([])}>Clear Selection</button>
     </>
   );
 }
