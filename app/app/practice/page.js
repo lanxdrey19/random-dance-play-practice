@@ -100,7 +100,7 @@ export default async function Practice() {
       return fetchedSongs;
     }
     return fetchedSongs.filter((song) =>
-      selectedTags.every((selectedTag) => song.tags.includes(selectedTag))
+      selectedTags.some((selectedTag) => song.tags.includes(selectedTag))
     );
   };
 
