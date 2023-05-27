@@ -16,8 +16,11 @@ async function getData() {
 }
 
 export default async function Practice() {
+  const [countdown, setCountdown] = useState(5); // Countdown value
+  const [showCountdown, setShowCountdown] = useState(false);
+
   const [selectedSongs, setSelectedSongs] = useState([]);
-  const [selectedTags, setSelectedTags] = useState([]);
+  const [selectedTags, setSelectedTags] = useState(["filmed", "non-filmed"]);
 
   const [isPlaying, setIsPlaying] = useState(false);
   const [currentSong, setCurrentSong] = useState(null);
@@ -29,6 +32,11 @@ export default async function Practice() {
       selectedSongs.includes(song._id)
     );
 
+    if (selectedSongsToPlay.length === 0) {
+      alert("No songs selected");
+      return;
+    }
+
     // Sort and play the selected songs
     selectedSongsToPlay.sort(() => Math.random() - 0.5);
     setIsPlaying(true);
@@ -36,10 +44,11 @@ export default async function Practice() {
     const playNextSong = () => {
       if (currentIndex >= selectedSongsToPlay.length) {
         // All songs have been played
-        console.log("All songs have been played");
+
         currentIndex = 0;
         setIsPlaying(false);
         setCurrentSong(null);
+        alert("All songs have been played");
         return;
       }
 
@@ -53,13 +62,26 @@ export default async function Practice() {
         onend: function () {
           sound.stop();
           currentIndex++;
-          setTimeout(playNextSong, parseInt(process.env.ONE_MILLISECOND, 10)); // Delay before playing the next song (2 seconds = 2000 milliseconds)
+          setTimeout(playNextSong, parseInt(process.env.ONE_MILLISECOND, 10));
         },
       });
       sound.play();
     };
 
-    playNextSong(); // Start playing the first song
+    setShowCountdown(true); // Show the countdown
+
+    // Countdown logic
+    let count = 5;
+    const countdownInterval = setInterval(() => {
+      if (count > 0) {
+        setCountdown(count);
+        count--;
+      } else {
+        clearInterval(countdownInterval);
+        setShowCountdown(false); // Hide the countdown
+        playNextSong(); // Start playing the first song
+      }
+    }, parseInt(process.env.ONE_MILLISECOND, 10)); // 1-second interval
   };
 
   const handleSongSelection = (e, songId) => {
@@ -106,7 +128,9 @@ export default async function Practice() {
 
   return (
     <>
+      <Link href="/">Home</Link>
       <h1>Practice</h1>
+      {showCountdown && <h2>Starting playback in {countdown} seconds</h2>}
       <button onClick={playSound} disabled={isPlaying}>
         {isPlaying ? "Playing..." : "Play"}
       </button>
@@ -115,9 +139,11 @@ export default async function Practice() {
           ? `Currently playing: ${currentSong.title} - ${currentSong.artist}`
           : "No song playing"}
       </h1>
-      <Link href="/">Home</Link>
 
       <h2>All Songs</h2>
+      <button onClick={selectAllSongs}>Select All</button>
+
+      <button onClick={() => setSelectedSongs([])}>Clear Selected Songs</button>
       <ul>
         {getFilteredSongs().map((song) => (
           <li key={song._id}>
@@ -153,9 +179,10 @@ export default async function Practice() {
         ))}
       </ul>
 
-      <button onClick={selectAllSongs}>Select All</button>
-
-      <button onClick={() => setSelectedSongs([])}>Clear Selection</button>
+      <h3>
+        {selectedTags.length === 0 &&
+          `No Tags Selected, all songs will be displayed`}
+      </h3>
     </>
   );
 }
