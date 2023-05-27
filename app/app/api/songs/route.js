@@ -2,18 +2,30 @@ import connectDB from "../../utils/db";
 import Song from "../../models/Song";
 import { NextResponse } from "next/server";
 
-connectDB();
+let isDBConnected = false;
+
+async function connectToDB() {
+  if (!isDBConnected) {
+    await connectDB();
+    isDBConnected = true;
+  }
+}
 
 export async function GET(request) {
   const { searchParams } = new URL(request.url);
   const tags = searchParams.get("tags");
 
   try {
+    await connectToDB();
     let songs;
     if (tags) {
-      songs = await Song.find({ tags: { $in: tags.split(",") } });
+      songs = await Song.find({ tags: { $in: tags.split(",") } }).sort({
+        artist: 1, // Sort in ascending order based on the artist field
+      });
     } else {
-      songs = await Song.find();
+      songs = await Song.find().sort({
+        artist: 1, // Sort in ascending order based on the artist field
+      });
     }
 
     return NextResponse.json(songs, {
