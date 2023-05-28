@@ -6,6 +6,7 @@ const nextConfig = {
     DB_CONNECTION_STRING: process.env.DB_CONNECTION_STRING,
     LOCALHOST_BASE_URL: process.env.LOCALHOST_BASE_URL,
     ONE_MILLISECOND: process.env.ONE_MILLISECOND,
+    WEATHER_API_URL: process.env.WEATHER_API_URL,
   },
   experimental: {
     appDir: true,

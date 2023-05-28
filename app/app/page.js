@@ -1,11 +1,16 @@
 import Link from "next/link";
 
-export default function Page() {
+const API_KEY = "YOUR_WEATHER_API_KEY";
+const CITY_NAME = "YOUR_CITY_NAME";
+
+const HomePage = () => {
   return (
     <>
       <h1>Goodbye, Next.js!</h1>
-      <Link href="/settings">Settings</Link>
       <Link href="/practice">Practice</Link>
+      <Link href="/weather">Weather</Link>
     </>
   );
-}
+};
+
+export default HomePage;
