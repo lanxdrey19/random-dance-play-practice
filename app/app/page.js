@@ -9,6 +9,9 @@ const HomePage = () => {
       <h1>Goodbye, Next.js!</h1>
       <Link href="/practice">Practice</Link>
       <Link href="/weather">Weather</Link>
+      <Link href="/birthdays">Birthdays</Link>
+      <Link href="/releases">Releases</Link>
+      <Link href="/news">News</Link>
     </>
   );
 };
