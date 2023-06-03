@@ -6,7 +6,7 @@ const CITY_NAME = "YOUR_CITY_NAME";
 const HomePage = () => {
   return (
     <>
-      <h1>Goodbye, Next.js!</h1>
+      <h1>Home Page</h1>
       <Link href="/practice">Practice</Link>
       <Link href="/weather">Weather</Link>
       <Link href="/birthdays">Birthdays</Link>
