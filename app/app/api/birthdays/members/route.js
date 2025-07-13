@@ -1,52 +1,72 @@
 import axios from "axios";
 import cheerio from "cheerio";
 import { NextResponse } from "next/server";
-import httpStatus from "http-status";
 
 export async function GET(req, res) {
   try {
     const arrayInfo = [];
-    await axios(process.env.FANDOM_BASE_URL + process.env.FANDOM_MAINPAGE)
-      .then((response) => {
-        const html = response.data;
-        const websiteData = cheerio.load(html);
 
-        websiteData("li", html).each(async function () {
-          const info = websiteData(this).text();
+    const response = await axios(
+      process.env.FANDOM_BASE_URL + process.env.FANDOM_MAINPAGE
+    );
+    const html = response.data;
+    const $ = cheerio.load(html);
 
-          const infoSubstr = info.substring(1, 3);
-          const potentialNumber = parseInt(infoSubstr);
-          if (
-            Number.isInteger(potentialNumber) &&
-            info.substring(0, 1) === "(" &&
-            info.substring(3, 4) === ")"
-          ) {
-            const link =
-              process.env.FANDOM_BASE_URL +
-              websiteData(this).find("a").attr("href");
-            arrayInfo.push({ info, link });
-          }
-        });
-      })
-      .catch((err) => console.log(err));
-    let finalArray = [];
+    $("li", html).each(function () {
+      const info = $(this).text();
 
-    for (let i = 0; i < arrayInfo.length; i++) {
-      await axios(arrayInfo[i].link).then((res) => {
+      const isBirthdayLine =
+        info.startsWith("(") &&
+        info[3] === ")" &&
+        !isNaN(parseInt(info.substring(1, 3)));
+
+      if (!isBirthdayLine) return;
+
+      const anchors = $(this).find("a");
+      const count = anchors.length;
+
+      if (count === 0) return;
+
+      const group =
+        count > 1
+          ? $(anchors[count - 1])
+              .text()
+              .trim()
+          : null;
+
+      const idolAnchors = count > 1 ? anchors.slice(0, count - 1) : anchors;
+
+      idolAnchors.each((_, anchor) => {
+        const idolName = $(anchor).text().trim();
+        const href = $(anchor).attr("href");
+        if (idolName && href) {
+          arrayInfo.push({
+            idolName,
+            group,
+            link: process.env.FANDOM_BASE_URL + href,
+          });
+        }
+      });
+    });
+
+    const finalArray = [];
+    for (const { idolName, group, link } of arrayInfo) {
+      try {
+        const res = await axios(link);
         const htmlProfile = res.data;
         const secondPageData = cheerio.load(htmlProfile);
-        const idolName = arrayInfo[i].info.substring(
-          5,
-          arrayInfo[i].info.length
-        );
-        secondPageData(".pi-image-thumbnail", htmlProfile).each(function () {
-          const imgSrc = secondPageData(this).attr("src").split("/revision")[0];
-          finalArray.push({
-            idolName,
-            imgSrc,
-          });
+
+        const thumbnail = secondPageData(".pi-image-thumbnail").attr("src");
+        const imgSrc = thumbnail ? thumbnail.split("/revision")[0] : null;
+
+        finalArray.push({
+          idolName,
+          group,
+          imgSrc,
         });
-      });
+      } catch (err) {
+        console.error(`Error fetching profile for ${idolName}:`, err.message);
+      }
     }
 
     return NextResponse.json(finalArray, {

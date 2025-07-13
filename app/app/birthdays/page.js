@@ -40,7 +40,9 @@ export default async function Birthdays() {
       <ul>
         {birthdayMembers.map((member) => (
           <li key={member.idolName}>
-            <p>{member.idolName}</p>
+            <p>
+              {member.idolName} {member.group ? "(" + member.group + ")" : ""}
+            </p>
             <img src={member.imgSrc} alt={member.idolName} />
           </li>
         ))}
