@@ -13,35 +13,33 @@ export async function GET(req, res) {
     const $ = cheerio.load(html);
 
     $("li", html).each(function () {
-      const info = $(this).text();
+      let fullText = $(this).text().trim();
 
       const isBirthdayLine =
-        info.startsWith("(") &&
-        info[3] === ")" &&
-        !isNaN(parseInt(info.substring(1, 3)));
+        fullText.startsWith("(") &&
+        fullText[3] === ")" &&
+        !isNaN(parseInt(fullText.substring(1, 3)));
 
       if (!isBirthdayLine) return;
 
+      const groupMatch = fullText.match(/\(([^)]+)\)\s*$/);
+      const group = groupMatch ? groupMatch[1].trim() : null;
+
+      if (groupMatch) {
+        fullText = fullText.replace(groupMatch[0], "").trim();
+      }
+
       const anchors = $(this).find("a");
-      const count = anchors.length;
 
-      if (count === 0) return;
-
-      const group =
-        count > 1
-          ? $(anchors[count - 1])
-              .text()
-              .trim()
-          : null;
-
-      const idolAnchors = count > 1 ? anchors.slice(0, count - 1) : anchors;
-
-      idolAnchors.each((_, anchor) => {
-        const idolName = $(anchor).text().trim();
+      anchors.each((_, anchor) => {
+        const anchorText = $(anchor).text().trim();
         const href = $(anchor).attr("href");
-        if (idolName && href) {
+
+        if (group && group.includes(anchorText)) return;
+
+        if (anchorText && href) {
           arrayInfo.push({
-            idolName,
+            idolName: anchorText,
             group,
             link: process.env.FANDOM_BASE_URL + href,
           });
@@ -50,13 +48,14 @@ export async function GET(req, res) {
     });
 
     const finalArray = [];
+
     for (const { idolName, group, link } of arrayInfo) {
       try {
         const res = await axios(link);
         const htmlProfile = res.data;
-        const secondPageData = cheerio.load(htmlProfile);
+        const $profile = cheerio.load(htmlProfile);
 
-        const thumbnail = secondPageData(".pi-image-thumbnail").attr("src");
+        const thumbnail = $profile(".pi-image-thumbnail").attr("src");
         const imgSrc = thumbnail ? thumbnail.split("/revision")[0] : null;
 
         finalArray.push({
