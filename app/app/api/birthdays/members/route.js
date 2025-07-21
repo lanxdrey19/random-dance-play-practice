@@ -35,7 +35,19 @@ export async function GET(req, res) {
         const anchorText = $(anchor).text().trim();
         const href = $(anchor).attr("href");
 
-        if (group && group.includes(anchorText)) return;
+        if (
+          group &&
+          group
+            .split(/,\s*/)
+            .map((g) =>
+              g
+                .replace(/^former\s+/i, "")
+                .trim()
+                .toLowerCase()
+            )
+            .some((g) => g === anchorText.toLowerCase())
+        )
+          return;
 
         if (anchorText && href) {
           arrayInfo.push({
